@@ -50,11 +50,11 @@ const queryClient = new QueryClient()
 function AppContent() {
   const [isTransitionPending, startTransition] = useTransition()
   const [shouldFetch, setShouldFetch] = useState(false)
-
+  
   const [requestModalVisible, setRequetsModalVisible] = useState(false);
   const { isConnected, address, status } = useAccount();
-
-  const { data, isPending, isSuccess, isError, writeContract } =
+  
+  const { writeContractAsync } =
     useWriteContract();
 
 
@@ -103,12 +103,14 @@ function AppContent() {
   }
 
   const buyTokens = async () => {
+    console.log("buyTokens");
     try {
-      writeContract({
+      writeContractAsync({
+        chainId: sepolia.id,
         address: LPE_TOKEN_EXCHANGE_CONTRACT.address,
         abi: LPE_TOKEN_EXCHANGE_ABI,
         functionName: 'buyTokens',
-        args: [10],
+        args: [10000000000000000],
       });
     } catch (error) {
       console.log(error);
@@ -117,22 +119,31 @@ function AppContent() {
 
   const addLiquidity = async () => {
     try {
-      writeContract({
+      writeContractAsync({
+        chainId: sepolia.id,
         address: LPE_TOKEN_EXCHANGE_CONTRACT.address,
         abi: LPE_TOKEN_EXCHANGE_ABI,
         functionName: 'addLiquidity',
-        args: ["0.01"],
+        args: ['0.01'],
       });
     } catch (error) {
       console.log(error);
     }
   };
 
+
+
   useEffect(() => {
-    if (isSuccess || isError) {
-      setRequetsModalVisible(true);
-    }
-  }, [isSuccess, isError]);
+    console.log("isConnected", isConnected);
+  }, [isConnected]);
+
+  useEffect(() => {
+    console.log("address", address);
+  }, [address]);
+
+  useEffect(() => {
+    console.log("status", status);
+  }, [status]);
 
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
