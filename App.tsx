@@ -2,12 +2,24 @@ import React, { Suspense, useEffect, useState, useTransition } from 'react'
 import { AppRegistry, View, Text, ActivityIndicator, Pressable, Button } from 'react-native'
 import '@walletconnect/react-native-compat'
 import { WagmiProvider, useReadContracts, useWriteContract, useAccount } from 'wagmi'
-import { sepolia, mainnet } from '@wagmi/core/chains'
+import { sepolia, mainnet, arbitrum, arbitrumSepolia } from '@wagmi/core/chains'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createAppKit, defaultWagmiConfig, AppKit, AppKitButton, NetworkButton } from '@reown/appkit-wagmi-react-native'
 import { LPE_TOKEN_ABI, LPE_TOKEN_EXCHANGE_ABI } from './abi'
-import { config } from './config'
-import { RequestModal } from './RequestModel'
+import { MetaMaskProvider } from '@metamask/sdk-react-native';
+import ethers from 'ethers'
+
+const sdkOptions = {
+  dappMetadata: {
+    name: 'Demo React Native App',
+    url: 'https://yourdapp.com',
+    iconUrl: 'https://yourdapp.com/icon.png',
+    scheme: 'yourappscheme',
+  },
+  infuraAPIKey: 'd1f95888fba84a42aa37803d4b5118ee', // Optional, but highly recommended for a better user experience
+};
+
+
 // 1. Get projectId at https://cloud.reown.com
 const projectId = '39a38f05adaa9e35db442c0a64abdac2'
 
@@ -21,6 +33,7 @@ const LPE_TOKEN_EXCHANGE_CONTRACT = {
   abi: LPE_TOKEN_EXCHANGE_ABI,
 } as const
 
+
 // 2. Create config
 const metadata = {
   name: 'AppKit RN',
@@ -33,7 +46,7 @@ const metadata = {
   }
 }
 
-const chains = [mainnet, sepolia] as const
+const chains = [mainnet, , arbitrum, arbitrumSepolia] as const
 
 const wagmiConfig = defaultWagmiConfig({ chains, projectId, metadata })
 
@@ -53,6 +66,19 @@ function AppContent() {
   
   const [requestModalVisible, setRequetsModalVisible] = useState(false);
   const { isConnected, address, status } = useAccount();
+  
+  const buyTokens = async () => {
+    console.log("buyTokens");
+    try {
+      writeContractAsync({
+        chainId: sepolia.id,
+        address: LPE_TOKEN_EXCHANGE_CONTRACT.address,
+        abi: LPE_TOKEN_EXCHANGE_ABI,
+        functionName: 'buyTokens',
+        args: [10000000000000000],
+      });
+  }
+
   
   const { writeContractAsync } =
     useWriteContract();
@@ -93,13 +119,6 @@ function AppContent() {
     startTransition(() => {
       setShouldFetch(true)
     })
-  }
-
-  // Function to safely stringify data, handling BigInt values
-  const safeStringify = (data: any): string => {
-    return JSON.stringify(data, (_, value) =>
-      typeof value === 'bigint' ? value.toString() : value
-    )
   }
 
   const buyTokens = async () => {
@@ -146,6 +165,7 @@ function AppContent() {
   }, [status]);
 
   return (
+    
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
       <AppKitButton />
       <NetworkButton />
@@ -153,7 +173,7 @@ function AppContent() {
      
       <Text onPress={handleFetch}>Fetch Data</Text>
       {isTransitionPending && <ActivityIndicator />}
-      {contractsData && <Text>{safeStringify(contractsData)}</Text>}
+      {address && <Text>{address}</Text>}
       <Pressable onPress={buyTokens} style={{ padding: 10, backgroundColor: 'lightblue', margin: 10 }}>
         <Text>buy 10 tokens</Text>
       </Pressable>
@@ -166,6 +186,7 @@ function AppContent() {
 
 function App() {
   return (
+
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <Suspense fallback={<ActivityIndicator />}>
